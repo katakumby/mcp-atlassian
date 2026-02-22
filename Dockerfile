@@ -1,7 +1,6 @@
 # Use a Python image with uv pre-installed
 FROM ghcr.io/astral-sh/uv:python3.10-alpine AS uv
-COPY localca.pem /usr/local/share/ca-certificates/localca.crt
-RUN update-ca-certificates
+
 # Install the project into `/app`
 WORKDIR /app
 
@@ -37,6 +36,15 @@ RUN find /app/.venv -name '__pycache__' -type d -exec rm -rf {} + && \
 
 # Final stage
 FROM python:3.10-alpine
+
+# Install local CA certificates
+COPY localca.pem /usr/local/share/ca-certificates/localca.crt
+RUN update-ca-certificates
+
+# Set environment variables so Python libraries use the updated CA bundle
+ENV REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+ENV CERTINFO=/etc/ssl/certs/ca-certificates.crt
 
 # Create a non-root user 'app'
 RUN adduser -D -h /home/app -s /bin/sh app

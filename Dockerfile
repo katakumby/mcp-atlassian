@@ -1,13 +1,23 @@
 # Use a Python image with uv pre-installed
 FROM ghcr.io/astral-sh/uv:python3.10-alpine AS uv
+# Install local CA certificates
+COPY localca.pem /usr/local/share/ca-certificates/localca.crt
+RUN update-ca-certificates
+
+# Set environment variables so Python libraries use the updated CA bundle
+ENV REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
+ENV CERTINFO=/etc/ssl/certs/ca-certificates.crt
+
+# Enable UV native TLS
+ENV UV_NATIVE_TLS=true
 
 # Install the project into `/app`
 WORKDIR /app
 
 # Enable bytecode compilation
 ENV UV_COMPILE_BYTECODE=1
-# Enable UV native TLS
-ENV UV_NATIVE_TLS=true
+
 # Copy from the cache instead of linking since it's a mounted volume
 ENV UV_LINK_MODE=copy
 
@@ -45,6 +55,9 @@ RUN update-ca-certificates
 ENV REQUESTS_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
 ENV SSL_CERT_FILE=/etc/ssl/certs/ca-certificates.crt
 ENV CERTINFO=/etc/ssl/certs/ca-certificates.crt
+
+# Enable UV native TLS
+ENV UV_NATIVE_TLS=true
 
 # Create a non-root user 'app'
 RUN adduser -D -h /home/app -s /bin/sh app
